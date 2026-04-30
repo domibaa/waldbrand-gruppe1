@@ -7,8 +7,8 @@ Wir erwarten, dass es zu vielen kleinen Bränden kommt, aber nur selten zu einem
 # 2 Entities, State variables und Scales
 Gitter mit Zellen
 3 Zustände:
-- Baum (wächst mit Wahrscheinlichkeit p)
-- Feuer (entsteht mit Wahrscheinlichkeit f; f << p)
+- Baum 
+- Feuer 
 - leer
 
 1 m^2 Zellen
@@ -18,6 +18,12 @@ Simulationsdauer:
 Zeitschritt Dauer: 
 
 
-# Process Overview and Scheduling
+# 3 Process Overview and Scheduling
+Zellen ändern ihren Zustand
+- Baum wächst mit Wahrscheinlichkeit p
+- Feuer entsteht mit Wahrscheinlichkeit f; f << p
+- wenn ein Nachbar brennt, brennt ein Baum im nächsten Zeitschritt
+
+
 
 
