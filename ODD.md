@@ -3,7 +3,7 @@ Wir wollen einen Waldbrand modellieren, um herauszufinden wie sich ein Feuer aus
 
 Wir erwarten, dass es zu vielen kleinen Bränden kommt, aber nur selten zu einem großflächigen Brand.
 
-genauer beschreiben (Parameteränderungen, Anzahl der Blitzeinschläge)
+genauer beschreiben, konkrete Forschungsfrage (Parameteränderungen, Anzahl der Blitzeinschläge)
 
 # 2 Entities, State variables und Scales
 Gitter mit Zellen
