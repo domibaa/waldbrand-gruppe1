@@ -1,8 +1,9 @@
-# 1 Puspose and Patterns
+# 1 Purpose and Patterns
 Wir wollen einen Waldbrand modellieren, um herauszufinden wie sich ein Feuer ausbreitet.
 
 Wir erwarten, dass es zu vielen kleinen Bränden kommt, aber nur selten zu einem großflächigen Brand.
 
+genauer beschreiben (Parameteränderungen, Anzahl der Blitzeinschläge)
 
 # 2 Entities, State variables und Scales
 Gitter mit Zellen
@@ -13,16 +14,17 @@ Gitter mit Zellen
 
 1 m^2 Zellen
 10.000 Zellen
+Gittergrenzen
 
 Simulationsdauer: - (bis ein Muster zu erkennen ist)
-Zeitschritt Dauer: 1s (oder kürzer)
+Zeitschritt Dauer: 1s (oder kürzer) - zufällige Tickdauer ist realisitscher!
 
 
 # 3 Process Overview and Scheduling
 Zellen ändern ihren Zustand
 - Baum wächst mit Wahrscheinlichkeit p
 - Feuer entsteht mit Wahrscheinlichkeit f; f << p, nur wenn es einen Baum gibt
-- wenn ein Nachbar brennt und es gibt einen Baum, dann brennt dieser Baum im nächsten Zeitschritt (Zustand = Feuer)
+- wenn ein Nachbar (welche Nachbarn?) brennt und es gibt einen Baum, dann brennt dieser Baum im nächsten Zeitschritt (Zustand = Feuer)
 - wenn Baum brennt ist die Zelle im nächsten Schritt leer
 
 Zellen aktualisieren Zustand in jedem Zeitschritt synchron
@@ -44,7 +46,7 @@ Zufallsrate für Baumwachstum und Blitzeinschlag (=Feuer)
 x Collectives:
 es gibt keine Gruppen von Agenten
 Observation:
-visuelle Darstellung der Zellen für jeden Zeitschritt
+visuelle Darstellung der Zellen für jeden Zeitschritt (und statistische Auswertung, mittlere Brandgröße)
 
 
 # 5 Initialization 
@@ -60,5 +62,5 @@ Baumwachstum: wenn Zelle leer, dann mit Wahrscheinlichkeit p Baum
 Feuerausbreitung: wenn es in der Zelle einen Baum gibt und mind. ein Nachbar brennt, dann Feuer
 Brand: wenn Zelle = Feuer, dann Zelle im nächsten Zeitsschritt leer
 
-
+genauer, technischer
 
