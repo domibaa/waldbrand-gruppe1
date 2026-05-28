@@ -3,6 +3,9 @@ Wir wollen einen Waldbrand modellieren, um herauszufinden wie sich ein Feuer aus
 
 Wir erwarten, dass es zu vielen kleinen Bränden kommt, aber nur selten zu einem großflächigen Brand.
 
+Wie verändert sich die durchschnittliche Brandgröße bei unterschiedlichen Walddichten (Wahrscheinlichkeit für Baumwachstum)?
+(Nadelwald und Mischwald; unterschiedliche Walddichte zu Beginn)
+
 genauer beschreiben, konkrete Forschungsfrage (Parameteränderungen, Anzahl der Blitzeinschläge)
 
 # 2 Entities, State variables und Scales
@@ -11,20 +14,20 @@ Gitter mit Zellen
 - Baum 
 - Feuer 
 - leer
-
-1 m^2 Zellen
+ 
+(1 m^2 Zellen)
 10.000 Zellen
 Gittergrenzen
 
-Simulationsdauer: - (bis ein Muster zu erkennen ist)
-Zeitschritt Dauer: 1s (oder kürzer) - zufällige Tickdauer ist realisitscher!
+Simulationsdauer: - 100 Ticks
+Zeitschritt Dauer: zufällige Tickdauer (ist realisitscher!)
 
 
 # 3 Process Overview and Scheduling
 Zellen ändern ihren Zustand
-- Baum wächst mit Wahrscheinlichkeit p
-- Feuer entsteht mit Wahrscheinlichkeit f; f << p, nur wenn es einen Baum gibt
-- wenn ein Nachbar (welche Nachbarn?) brennt und es gibt einen Baum, dann brennt dieser Baum im nächsten Zeitschritt (Zustand = Feuer)
+- Baum wächst mit Wahrscheinlichkeit p (=0,6)
+- Feuer entsteht mit Wahrscheinlichkeit f (=0,2); f << p, nur wenn es einen Baum gibt
+- wenn ein Nachbar (Moore-Nachbarschaft) brennt und es gibt einen Baum, dann brennt dieser Baum im nächsten Zeitschritt (Zustand = Feuer)
 - wenn Baum brennt ist die Zelle im nächsten Schritt leer
 
 Zellen aktualisieren Zustand in jedem Zeitschritt synchron
@@ -51,7 +54,8 @@ visuelle Darstellung der Zellen für jeden Zeitschritt (und statistische Auswert
 
 # 5 Initialization 
 10.000 Zellen (Größe von 1 m^2)
-Baum mit Wahrscheinlichkeit -
+Baum mit Wahrscheinlichkeit - 0,7
+(Nadelbäume / Nadelbäume und Laubbäume)
 
 # 6 Input Data
 keine
