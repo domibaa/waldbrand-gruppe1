@@ -19,14 +19,14 @@ Gitter mit Zellen
 10.000 Zellen
 Gittergrenzen
 
-Simulationsdauer: - 100 Ticks
+Simulationsdauer: 500 Ticks
 Zeitschritt Dauer: zufällige Tickdauer (ist realisitscher!)
 
 
 # 3 Process Overview and Scheduling
 Zellen ändern ihren Zustand
 - Baum wächst mit Wahrscheinlichkeit p (=0,6)
-- Feuer entsteht mit Wahrscheinlichkeit f (=0,2); f << p, nur wenn es einen Baum gibt
+- Feuer entsteht mit Wahrscheinlichkeit f (=0,001); f << p, nur wenn es einen Baum gibt
 - wenn ein Nachbar (Moore-Nachbarschaft) brennt und es gibt einen Baum, dann brennt dieser Baum im nächsten Zeitschritt (Zustand = Feuer)
 - wenn Baum brennt ist die Zelle im nächsten Schritt leer
 
