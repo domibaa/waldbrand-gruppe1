@@ -34,9 +34,8 @@ import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.ndimage import label as ndlabel
 import matplotlib.colors as mcolors
-from matplotlib.animation import FuncAnimation
-from matplotlib.patches import Patch
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -133,8 +132,35 @@ def step(grid: np.ndarray, p_growth: float, p_lightning: float) -> np.ndarray:
 # Simulation runner
 # ---------------------------------------------------------------------------
 
+def cluster_stats(grid: np.ndarray) -> tuple[float, int]:
+    """
+    Compute connected-component statistics for burning cells.
+
+    Uses 8-connectivity (Moore neighbourhood) via scipy.ndimage.label so that
+    diagonally adjacent fire cells belong to the same cluster — consistent with
+    the rest of the simulation.
+
+    Parameters
+    ----------
+    grid : np.ndarray, shape (N, N)
+
+    Returns
+    -------
+    mean_size : float
+        Mean cluster size in cells (0.0 if no fire).
+    num_clusters : int
+        Number of distinct fire clusters (0 if no fire).
+    """
+    fire_mask = (grid == FIRE).astype(int)
+    # np.ones((3,3)) = 8-connectivity structure
+    _, num_clusters = ndlabel(fire_mask, structure=np.ones((3, 3)))
+    total_fire = int(fire_mask.sum())
+    mean_size  = total_fire / num_clusters if num_clusters > 0 else 0.0
+    return mean_size, num_clusters
+
+
 def run_simulation(p_growth: float, p_lightning: float, p_init: float
-                   ) -> tuple[list[float], list[float]]:
+                   ) -> tuple[list[float], list[float], list[float], list[int]]:
     """
     Run the simulation for TICKS steps and record per-tick statistics.
 
@@ -147,20 +173,29 @@ def run_simulation(p_growth: float, p_lightning: float, p_init: float
     Returns
     -------
     fire_sizes : list[float]
-        Number of burning cells at each tick.
+        Total number of burning cells at each tick.
     tree_densities : list[float]
         Fraction of cells that are trees at each tick.
+    mean_cluster_sizes : list[float]
+        Mean size of connected fire clusters at each tick.
+    num_clusters : list[int]
+        Number of distinct fire clusters at each tick.
     """
-    grid           = init_grid(p_init)
-    fire_sizes     = []
-    tree_densities = []
+    grid               = init_grid(p_init)
+    fire_sizes         = []
+    tree_densities     = []
+    mean_cluster_sizes = []
+    num_clusters       = []
 
     for _ in range(TICKS):
         fire_sizes.append(float(np.sum(grid == FIRE)))
         tree_densities.append(float(np.sum(grid == TREE)) / N ** 2)
+        mean_s, n_clust = cluster_stats(grid)
+        mean_cluster_sizes.append(mean_s)
+        num_clusters.append(n_clust)
         grid = step(grid, p_growth, p_lightning)
 
-    return fire_sizes, tree_densities
+    return fire_sizes, tree_densities, mean_cluster_sizes, num_clusters
 
 
 # ---------------------------------------------------------------------------
@@ -168,39 +203,45 @@ def run_simulation(p_growth: float, p_lightning: float, p_init: float
 # ---------------------------------------------------------------------------
 
 def plot_results(p_growth: float, p_lightning: float, p_init: float,
-                 fire_sizes: list[float], tree_densities: list[float]) -> None:
+                 fire_sizes: list[float], tree_densities: list[float],
+                 mean_cluster_sizes: list[float], num_clusters: list[int]) -> None:
     """
-    Show a two-panel time-series plot for a single parameter combination.
+    Show a four-panel time-series plot for a single parameter combination.
+
+    Panels
+    ------
+    1. Total burning cells per tick
+    2. Tree density per tick
+    3. Mean fire-cluster size per tick  (connected components)
+    4. Number of fire clusters per tick (connected components)
 
     Parameters
     ----------
     p_growth, p_lightning, p_init : float
-        Parameters used for this run (shown in the title).
-    fire_sizes : list[float]
-    tree_densities : list[float]
+    fire_sizes, tree_densities, mean_cluster_sizes : list[float]
+    num_clusters : list[int]
     """
     ticks = range(TICKS)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+    fig, axes = plt.subplots(4, 1, figsize=(9, 10), sharex=True)
     fig.suptitle(
         f"growth={p_growth}  lightning={p_lightning}  init={p_init}",
         fontsize=11, fontweight="bold",
     )
 
-    ax1.plot(ticks, fire_sizes, color="#e84c0e", linewidth=0.9)
-    ax1.axhline(np.mean(fire_sizes), color="#e84c0e", linestyle="--",
-                linewidth=1.2, label=f"mean = {np.mean(fire_sizes):.1f}")
-    ax1.set_ylabel("Burning cells")
-    ax1.legend(fontsize=9)
-    ax1.grid(True, alpha=0.3)
+    def _panel(ax, data, color, ylabel, fmt=".1f"):
+        ax.plot(ticks, data, color=color, linewidth=0.9)
+        ax.axhline(np.mean(data), color=color, linestyle="--",
+                   linewidth=1.2, label=f"mean = {np.mean(data):{fmt}}")
+        ax.set_ylabel(ylabel)
+        ax.legend(fontsize=9)
+        ax.grid(True, alpha=0.3)
 
-    ax2.plot(ticks, tree_densities, color="#2d6a2d", linewidth=0.9)
-    ax2.axhline(np.mean(tree_densities), color="#2d6a2d", linestyle="--",
-                linewidth=1.2, label=f"mean = {np.mean(tree_densities):.3f}")
-    ax2.set_ylabel("Tree density")
-    ax2.set_xlabel("Tick")
-    ax2.legend(fontsize=9)
-    ax2.grid(True, alpha=0.3)
+    _panel(axes[0], fire_sizes,         "#e84c0e", "Burning cells")
+    _panel(axes[1], tree_densities,     "#2d6a2d", "Tree density",      fmt=".3f")
+    _panel(axes[2], mean_cluster_sizes, "#e08020", "Mean cluster size")
+    _panel(axes[3], num_clusters,       "#8040c0", "# fire clusters")
 
+    axes[-1].set_xlabel("Tick")
     plt.tight_layout()
 
 
@@ -258,19 +299,24 @@ def main() -> None:
 
     # Table header
     print(f"\n{'growth':>10} {'lightning':>12} {'init':>6} "
-          f"{'mean_fire':>12} {'mean_tree_density':>18}")
-    print("-" * 64)
+          f"{'mean_fire':>12} {'mean_tree':>10} {'mean_cluster':>14} {'mean_n_clusters':>16}")
+    print("-" * 80)
 
     for p_growth, p_lightning, p_init in combos:
-        fire_sizes, tree_densities = run_simulation(p_growth, p_lightning, p_init)
+        fire_sizes, tree_densities, mean_cluster_sizes, num_clusters = \
+            run_simulation(p_growth, p_lightning, p_init)
 
-        mean_fire = np.mean(fire_sizes)
-        mean_tree = np.mean(tree_densities)
+        mean_fire    = np.mean(fire_sizes)
+        mean_tree    = np.mean(tree_densities)
+        mean_cluster = np.mean(mean_cluster_sizes)
+        mean_n_clust = np.mean(num_clusters)
 
         print(f"{p_growth:>10.4f} {p_lightning:>12.5f} {p_init:>6.2f} "
-              f"{mean_fire:>12.2f} {mean_tree:>18.4f}")
+              f"{mean_fire:>12.2f} {mean_tree:>10.4f} "
+              f"{mean_cluster:>14.2f} {mean_n_clust:>16.2f}")
 
-        plot_results(p_growth, p_lightning, p_init, fire_sizes, tree_densities)
+        plot_results(p_growth, p_lightning, p_init,
+                     fire_sizes, tree_densities, mean_cluster_sizes, num_clusters)
 
     print()
     plt.show()  # open all plot windows at once — blocks only here
