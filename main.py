@@ -26,7 +26,7 @@ Only species B:
     uv run main.py --init-a 0.0 --init-b 0.6
 
 Mixed forest:
-    uv run main.py --init-a 0.3 --init-b 0.3 --spread-a 1.0 --spread-b 0.4
+    uv run main.py --init-a 0.3 --init-b 0.3 --spread-a 1.0 --spread-b 0.6
 
 For Parameter sweeps skip the animation:
     uv run main.py --sweep-growth 0.005,0.01,0.02 \
@@ -325,7 +325,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="Initial tree density for species B.")
     p.add_argument("--spread-a",  type=float, default=1.0,  
                    help="Probability of ignation for tree species A.")
-    p.add_argument("--spread-b",  type=float, default=0.4,  
+    p.add_argument("--spread-b",  type=float, default=0.6,  
                    help="Probability of ignation for tree species B.")
     p.add_argument("--no-anim", action="store_true",
                    help="Skips the animation and only returns data plots.")
@@ -378,11 +378,17 @@ def main() -> None:
     ))
     is_sweep = len(combos) > 1
 
+    # Lists for correlation analysis
+    sweep_growth_vals   = []
+    sweep_mean_fire     = []
+    sweep_mean_cluster  = []
+
     # Table header
     print(f"\n{'growth':>10} {'lightning':>12} {'init_a':>7} {'init_b':>7} "
           f"{'spread_a':>9} {'spread_b':>9} {'mean_fire':>12}"
           f"{'mean_tree_a':>12} {'mean_tree_b':>12} {'mean_cluster':>14} {'mean_n_clusters':>16}")
     print("-" * 80)
+
 
     for p_growth, p_lightning, p_init_a, p_init_b, p_spread_a, p_spread_b in combos:
         fire_sizes, tree_a_densities, tree_b_densities, mean_cluster_sizes, num_clusters = \
@@ -396,7 +402,13 @@ def main() -> None:
 
         print(f"{p_growth:>10.4f} {p_lightning:>12.5f} {p_init_a:>7.2f} {p_init_b:>7.2f} "
               f"{p_spread_a:>9.2f} {p_spread_b:>9.2f} {mean_fire:>12.2f} "
-              f"{mean_tree_a:>9.2f} {mean_tree_b:>9.2f} {mean_fire:>12.2f} {mean_cluster:>14.2f} {mean_n_clust:>16.2f}")
+              f"{mean_tree_a:>9.2f} {mean_tree_b:>9.2f} {mean_cluster:>14.2f} {mean_n_clust:>16.2f}")
+
+        # Collect values for correlation analysis (only useful for growth sweep)
+        if args.sweep_growth:
+            sweep_growth_vals.append(p_growth)
+            sweep_mean_fire.append(mean_fire)
+            sweep_mean_cluster.append(mean_cluster)
 
         grid_container = [init_grid(p_tree_a=p_init_a, p_tree_b=p_init_b)]
 
@@ -477,8 +489,14 @@ def main() -> None:
 
         plot_results(p_growth, p_lightning, p_init_a, p_init_b,
                      fire_sizes, tree_a_densities, tree_b_densities, mean_cluster_sizes, num_clusters)
-        
-        
+
+
+    if args.sweep_growth and len(set(sweep_growth_vals)) > 1:
+        corr_fire    = np.corrcoef(sweep_growth_vals, sweep_mean_fire)[0, 1]
+        corr_cluster = np.corrcoef(sweep_growth_vals, sweep_mean_cluster)[0, 1]
+        print(f"\n── Korrelation (Pearson) beim growth-Sweep ──")
+        print(f"  growth ↔ mean_fire:    r = {corr_fire:+.4f}")
+        print(f"  growth ↔ mean_cluster: r = {corr_cluster:+.4f}")    
 
     print()
     plt.show()  # open all plot windows at once — blocks only here
