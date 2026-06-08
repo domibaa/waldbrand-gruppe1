@@ -396,7 +396,7 @@ def main() -> None:
 
         print(f"{p_growth:>10.4f} {p_lightning:>12.5f} {p_init_a:>7.2f} {p_init_b:>7.2f} "
               f"{p_spread_a:>9.2f} {p_spread_b:>9.2f} {mean_fire:>12.2f} "
-              f"{p_spread_a:>9.2f} {p_spread_b:>9.2f} {mean_fire:>12.2f} {mean_cluster:>14.2f} {mean_n_clust:>16.2f}")
+              f"{mean_tree_a:>9.2f} {mean_tree_b:>9.2f} {mean_fire:>12.2f} {mean_cluster:>14.2f} {mean_n_clust:>16.2f}")
 
         grid_container = [init_grid(p_tree_a=p_init_a, p_tree_b=p_init_b)]
 
