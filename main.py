@@ -28,11 +28,11 @@ Only species B:
 Mixed forest:
     uv run main.py --init-a 0.3 --init-b 0.3 --spread-a 1.0 --spread-b 0.4
 
-Parameter sweep:
+For Parameter sweeps skip the animation:
     uv run main.py --sweep-growth 0.005,0.01,0.02 \
                        --sweep-lightning 0.0001,0.0005 \
                        --sweep-spread-b 0.2,0.4,0.6 \
-                       --init-a 0.3 --init-b 0.3
+                       --init-a 0.3 --init-b 0.3 --no-anim
 
 Any mix of fixed and swept parameters is allowed.
 """
@@ -44,6 +44,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import label as ndlabel
 import matplotlib.colors as mcolors
+from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Patch
+from matplotlib.widgets import Slider, Button
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -239,7 +242,6 @@ def run_simulation(p_growth: float, p_lightning: float, p_init_a: float,
 
     return fire_sizes, tree_a_densities, tree_b_densities, mean_cluster_sizes, num_clusters
 
-
 # ---------------------------------------------------------------------------
 # Plotting
 # ---------------------------------------------------------------------------
@@ -315,9 +317,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--init-b",    type=float, default=0.0, 
                     help="Initial tree density for species B.")
     p.add_argument("--spread-a",  type=float, default=1.0,  
-                help="Probability of ignation for tree species A.")
+                   help="Probability of ignation for tree species A.")
     p.add_argument("--spread-b",  type=float, default=0.4,  
-                help="Probability of ignation for tree species B.")
+                   help="Probability of ignation for tree species B.")
+    p.add_argument("--no-anim", action="store_true",
+                   help="Skips the animation and only returns data plots.")
 
     # Sweep overrides (comma-separated lists)
     p.add_argument("--sweep-growth",    type=parse_float_list, default=None,
@@ -384,8 +388,72 @@ def main() -> None:
               f"{p_spread_a:>9.2f} {p_spread_b:>9.2f} {mean_fire:>12.2f} "
               f"{p_spread_a:>9.2f} {p_spread_b:>9.2f} {mean_fire:>12.2f} {mean_cluster:>14.2f} {mean_n_clust:>16.2f}")
 
+        grid_container = [init_grid(p_tree_a=p_init_a, p_tree_b=p_init_b)]
+
+        if not args.no_anim: #visualisation 
+            fig, ax = plt.subplots(figsize=(8, 7))
+            plt.subplots_adjust(left=0.1, bottom=0.42)
+
+            image = ax.imshow(grid_container[0], cmap=CMAP, norm=NORM, interpolation="nearest")
+            ax.set_title("Wildfire Simulation — Cellular Automaton",
+                        fontsize=13, fontweight="bold")
+            ax.axis("off")
+
+            # Legend
+            legend_handles = [
+                Patch(color="#3b2a1a", label="Empty"),
+                Patch(color="#2d6a2d", label="Tree A"),
+                Patch(color="#e84c0e", label="Fire"),
+                Patch(color = "#a3c96e", label="Tree B")
+            ]
+            ax.legend(handles=legend_handles, loc="upper right",
+                    fontsize=9, framealpha=0.8, edgecolor="gray")
+
+            # --- Sliders ---
+            ax_spread_a = plt.axes([0.15, 0.32, 0.70, 0.03])
+            ax_spread_b = plt.axes([0.15, 0.26, 0.70, 0.03])
+            ax_growth   = plt.axes([0.15, 0.20, 0.70, 0.03])
+            ax_lightning= plt.axes([0.15, 0.14, 0.70, 0.03])
+            ax_init_a   = plt.axes([0.15, 0.08, 0.70, 0.03])
+            ax_init_b   = plt.axes([0.15, 0.02, 0.70, 0.03])
+
+            s_spread_a = Slider(ax_spread_a, "Spread A", 0.0, 1.0, valinit=1.0,  valstep=0.05)
+            s_spread_b = Slider(ax_spread_b, "Spread B", 0.0, 1.0, valinit=0.4,  valstep=0.05)
+            s_init_a   = Slider(ax_init_a,   "Init A",   0.0, 1.0, valinit=0.4,  valstep=0.05)
+            s_init_b   = Slider(ax_init_b,   "Init B",   0.0, 1.0, valinit=0.2,  valstep=0.05)
+
+            s_growth    = Slider(ax_growth,    "Growth",       0.0, 0.05,  valinit=p_growth,    valstep=0.001)
+            s_lightning = Slider(ax_lightning, "Lightning",    0.0, 0.005, valinit=p_lightning, valstep=0.0001)
+
+
+            # --- Reset button ---
+            ax_btn    = plt.axes([0.40, 0.01, 0.20, 0.05])
+            btn_reset = Button(ax_btn, "Reset", color="#c8e6c9", hovercolor="#a5d6a7")
+
+
+            def reset(event) -> None:
+                """Reinitialise the grid using the current init-density slider values."""
+                grid_container[0] = init_grid(p_tree_a=s_init_a.val, p_tree_b=s_init_b.val)
+
+
+            btn_reset.on_clicked(reset)
+
+
+            def update(_) -> tuple:
+                """Animation callback: advance one step and refresh the display."""
+                grid_container[0] = step(grid_container[0], s_growth.val, s_lightning.val,
+                    p_spread_a=s_spread_a.val, p_spread_b=s_spread_b.val,
+                    p_init_a=s_init_a.val, p_init_b=s_init_b.val)
+                image.set_data(grid_container[0])
+                return (image,)
+
+
+            ani = FuncAnimation(fig, update, interval=100, blit=True)
+
         plot_results(p_growth, p_lightning, p_init_a, p_init_b,
                      fire_sizes, tree_a_densities, tree_b_densities, mean_cluster_sizes, num_clusters)
+        
+        
 
     print()
     plt.show()  # open all plot windows at once — blocks only here
