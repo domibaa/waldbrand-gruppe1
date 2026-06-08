@@ -34,7 +34,11 @@ For Parameter sweeps skip the animation:
                        --sweep-spread-b 0.2,0.4,0.6 \
                        --init-a 0.3 --init-b 0.3 --no-anim
 
+To save the animation (ffmpeg is required!): 
+    uv run main.py --save-video wildfire_presentation.mp4
 Any mix of fixed and swept parameters is allowed.
+----------------
+
 """
 
 import argparse
@@ -47,6 +51,9 @@ import matplotlib.colors as mcolors
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Patch
 from matplotlib.widgets import Slider, Button
+from matplotlib.animation import FFMpegWriter
+
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -322,6 +329,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Probability of ignation for tree species B.")
     p.add_argument("--no-anim", action="store_true",
                    help="Skips the animation and only returns data plots.")
+    p.add_argument("--save-video", type=str,  default=None, metavar="filename.mp4",
+                   help="Saves the animation as a video file.")
 
     # Sweep overrides (comma-separated lists)
     p.add_argument("--sweep-growth",    type=parse_float_list, default=None,
@@ -350,6 +359,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+
     """Entry point: parse arguments, run simulation(s), print table, show plots."""
     args = build_parser().parse_args()
     np.random.seed(42) 
@@ -417,11 +427,10 @@ def main() -> None:
             ax_init_a   = plt.axes([0.15, 0.08, 0.70, 0.03])
             ax_init_b   = plt.axes([0.15, 0.02, 0.70, 0.03])
 
-            s_spread_a = Slider(ax_spread_a, "Spread A", 0.0, 1.0, valinit=1.0,  valstep=0.05)
-            s_spread_b = Slider(ax_spread_b, "Spread B", 0.0, 1.0, valinit=0.4,  valstep=0.05)
-            s_init_a   = Slider(ax_init_a,   "Init A",   0.0, 1.0, valinit=0.4,  valstep=0.05)
-            s_init_b   = Slider(ax_init_b,   "Init B",   0.0, 1.0, valinit=0.2,  valstep=0.05)
-
+            s_spread_a = Slider(ax_spread_a, "Spread A", 0.0, 1.0, valinit=p_spread_a, valstep=0.05)
+            s_spread_b = Slider(ax_spread_b, "Spread B", 0.0, 1.0, valinit=p_spread_b, valstep=0.05)
+            s_init_a   = Slider(ax_init_a,   "Init A",   0.0, 1.0, valinit=p_init_a,   valstep=0.05)
+            s_init_b   = Slider(ax_init_b,   "Init B",   0.0, 1.0, valinit=p_init_b,   valstep=0.05)
             s_growth    = Slider(ax_growth,    "Growth",       0.0, 0.05,  valinit=p_growth,    valstep=0.001)
             s_lightning = Slider(ax_lightning, "Lightning",    0.0, 0.005, valinit=p_lightning, valstep=0.0001)
 
@@ -438,6 +447,7 @@ def main() -> None:
 
             btn_reset.on_clicked(reset)
 
+            fps = 10
 
             def update(_) -> tuple:
                 """Animation callback: advance one step and refresh the display."""
@@ -448,7 +458,22 @@ def main() -> None:
                 return (image,)
 
 
-            ani = FuncAnimation(fig, update, interval=100, blit=True)
+            ani = FuncAnimation(fig, update, frames = TICKS, interval=1000/fps, blit=True)
+
+            if args.save_video:
+                writer = FFMpegWriter(fps=fps, bitrate=2000, metadata=dict(artist='Lumo', title='Wildfire Sim'))
+                
+                try:
+                    ani.save('wildfire_simulation.mp4', writer=writer)
+                    plt.close(fig) 
+                    continue
+
+                except Exception as e:
+
+                    print(f"Error while trying to save the video: {e}")
+                    print("Make sure to have installed ffmpeg installiert!")
+                    plt.close(fig)
+            
 
         plot_results(p_growth, p_lightning, p_init_a, p_init_b,
                      fire_sizes, tree_a_densities, tree_b_densities, mean_cluster_sizes, num_clusters)
