@@ -483,7 +483,7 @@ def main() -> None:
                 except Exception as e:
 
                     print(f"Error while trying to save the video: {e}")
-                    print("Make sure to have installed ffmpeg installiert!")
+                    print("Make sure to have installed ffmpeg!")
                     plt.close(fig)
             
 
@@ -494,7 +494,7 @@ def main() -> None:
     if args.sweep_growth and len(set(sweep_growth_vals)) > 1:
         corr_fire    = np.corrcoef(sweep_growth_vals, sweep_mean_fire)[0, 1]
         corr_cluster = np.corrcoef(sweep_growth_vals, sweep_mean_cluster)[0, 1]
-        print(f"\n── Korrelation (Pearson) beim growth-Sweep ──")
+        print(f"\n── correlation (Pearson) for growth-sweep ──")
         print(f"  growth ↔ mean_fire:    r = {corr_fire:+.4f}")
         print(f"  growth ↔ mean_cluster: r = {corr_cluster:+.4f}")    
 
