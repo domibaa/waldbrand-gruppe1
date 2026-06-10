@@ -512,8 +512,8 @@ def main() -> None:
             corr_cluster = np.corrcoef(sweep_init_b_vals, sweep_mean_fire_b)[0, 1]
             corr_n_clust = np.corrcoef(sweep_init_b_vals, sweep_mean_cluster_b)[0, 1]
             print(f"\n── correlation (Pearson) for init-b-sweep ──")
-            print(f"  init_b ↔ mean_cluster_size: r = {corr_cluster:+.4f}")
-            print(f"  init_b ↔ mean_n_clusters:   r = {corr_n_clust:+.4f}")
+            print(f"  init_b ↔ mean_fire: r = {corr_cluster:+.4f}")
+            print(f"  init_b ↔ mean_cluster:   r = {corr_n_clust:+.4f}")
    
 
     print()
