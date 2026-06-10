@@ -382,6 +382,9 @@ def main() -> None:
     sweep_growth_vals   = []
     sweep_mean_fire     = []
     sweep_mean_cluster  = []
+    sweep_init_b_vals    = []
+    sweep_mean_cluster_b = []
+    sweep_mean_n_clust_b = []
 
     # Table header
     print(f"\n{'growth':>10} {'lightning':>12} {'init_a':>7} {'init_b':>7} "
@@ -409,6 +412,12 @@ def main() -> None:
             sweep_growth_vals.append(p_growth)
             sweep_mean_fire.append(mean_fire)
             sweep_mean_cluster.append(mean_cluster)
+
+        if args.sweep_init_b:
+            sweep_init_b_vals.append(p_init_b)
+            sweep_mean_cluster_b.append(mean_cluster)
+            sweep_mean_n_clust_b.append(mean_n_clust)
+            
 
         grid_container = [init_grid(p_tree_a=p_init_a, p_tree_b=p_init_b)]
 
@@ -496,7 +505,15 @@ def main() -> None:
         corr_cluster = np.corrcoef(sweep_growth_vals, sweep_mean_cluster)[0, 1]
         print(f"\n── correlation (Pearson) for growth-sweep ──")
         print(f"  growth ↔ mean_fire:    r = {corr_fire:+.4f}")
-        print(f"  growth ↔ mean_cluster: r = {corr_cluster:+.4f}")    
+        print(f"  growth ↔ mean_cluster: r = {corr_cluster:+.4f}") 
+
+    if args.sweep_init_b and len(set(sweep_init_b_vals)) > 1:
+            corr_cluster = np.corrcoef(sweep_init_b_vals, sweep_mean_cluster_b)[0, 1]
+            corr_n_clust = np.corrcoef(sweep_init_b_vals, sweep_mean_n_clust_b)[0, 1]
+            print(f"\n── Korrelation (Pearson) für init-b-sweep ──")
+            print(f"  init_b ↔ mean_cluster_size: r = {corr_cluster:+.4f}")
+            print(f"  init_b ↔ mean_n_clusters:   r = {corr_n_clust:+.4f}")
+   
 
     print()
     plt.show()  # open all plot windows at once — blocks only here
