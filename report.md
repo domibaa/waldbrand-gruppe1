@@ -14,7 +14,7 @@ In diesem Projekt wird ein vereinfachtes Waldbrandmodell auf einem zweidimension
 
 Die zentrale Forschungsfrage lautet:
 
-**Wie verändern sich die mittlere Anzahl gleichzeitig brennender Zellen, die mittlere Feuerclustergröße und die mittlere Anzahl gleichzeitig aktiver Feuercluster bei unterschiedlichen Wahrscheinlichkeiten für Baumwachstum in einem Nadelwald im Vergleich zu einem Mischwald?**
+**Wie verändert sich die durchschnittliche Brandgröße, Clustergröße und Clusteranzahl bei unterschiedlichen Wahrscheinlichkeiten für Baumwachstum für einen Nadelwald und einen Mischwald?**
 
 Mit dieser Frage soll untersucht werden, ob eine höhere Wachstumswahrscheinlichkeit zu mehr gleichzeitiger Brandaktivität führt und ob ein Mischwald mit feuerresistenteren Baumarten die räumliche Ausbreitung des Feuers verringern kann. Die mittlere Anzahl gleichzeitig brennender Zellen (`mean_fire`) beschreibt, wie viele Zellen im Mittel pro Zeitschritt im Zustand `FIRE` sind. Die mittlere Feuerclustergröße (`mean_cluster`) beschreibt die durchschnittliche Größe zusammenhängender Gruppen brennender Zellen. Die Clusteranzahl (`mean_n_clusters`) gibt an, wie viele voneinander getrennte Feuercluster im Mittel gleichzeitig aktiv sind.
 
