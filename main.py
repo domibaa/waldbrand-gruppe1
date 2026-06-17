@@ -1,7 +1,7 @@
 """
 Wildfire Simulation — Cellular Automaton
 =========================================
-A simple forest-fire model on a 2-D grid with three cell states:
+A simple forest-fire model on a 2-D grid with four cell states:
 
     EMPTY  (0) — bare ground
     TREE_A (1) — living tree, species A (highly flammable)
@@ -66,7 +66,7 @@ TREE_B = 3
 N    = 100   # grid size (N × N)
 TICKS = 1000  # simulation duration
 
-# Colour map: EMPTY = dark brown, TREE = forest green, FIRE = orange-red
+# Colour map: EMPTY = dark brown, TREE_A = forest green, FIRE = orange-red, TREE_B = light green
 CMAP = mcolors.ListedColormap(["#3b2a1a", "#2d6a2d", "#e84c0e", "#a3c96e" ])
 NORM = mcolors.BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5], CMAP.N)
 
