@@ -32,7 +32,8 @@ def init_grid(p_tree_a: float, p_tree_b: float) -> np.ndarray:
     )
 ```
 
-Die Wahrscheinlichkeit für leere Zellen ergibt sich aus der Restwahrscheinlichkeit nach Abzug der Wahrscheinlichkeiten für Baumtyp A und Baumtyp B. Mit np.random.choice() wird anschließend für jede Zelle ein Anfangszustand ausgewählt. Dadurch können unterschiedliche Waldzusammensetzungen simuliert werden, zum Beispiel ein reiner Nadelwald oder ein Mischwald.
+Die Wahrscheinlichkeit für leere Zellen ergibt sich aus der Restwahrscheinlichkeit nach Abzug der Wahrscheinlichkeiten für Baumtyp A und Baumtyp B. Mit np.random.choice() wird anschließend für jede Zelle ein Anfangszustand ausgewählt. 
+
 Die Zustandsänderungen erfolgen synchron. Das bedeutet, dass zuerst für alle Zellen auf Basis des aktuellen Gitters der nächste Zustand berechnet wird. Erst danach wird das gesamte Gitter aktualisiert. Dadurch reagieren Zellen nicht innerhalb desselben Ticks auf Zustände, die eigentlich erst im nächsten Tick gelten.
 
 Die wichtigsten Prozesse im Modell sind Baumwachstum, Entzündung und Abbrennen. Eine leere Zelle kann mit der Wahrscheinlichkeit p_growth wieder zu einem Baum werden. Ob dabei Baumtyp A oder Baumtyp B wächst, richtet sich nach dem Verhältnis der Anfangsdichten p_init_a und p_init_b. Ein Baum kann entweder durch Blitzschlag mit der Wahrscheinlichkeit p_lightning oder durch benachbarte brennende Zellen Feuer fangen. Als Nachbarschaft wird die Moore-Nachbarschaft verwendet, also die acht umliegenden Zellen einschließlich diagonaler Nachbarn. Baumtyp A entzündet sich bei einem brennenden Nachbarn mit p_spread_a = 1.0, Baumtyp B mit p_spread_b = 0.6.
@@ -145,7 +146,7 @@ Die Forschungsfrage lässt sich damit folgendermaßen beantworten: Eine höhere 
 
 Das Modell liefert keine realistische Vorhersage echter Waldbrände. Dafür ist es zu stark vereinfacht. Reale Waldbrände werden unter anderem von Windrichtung, Windgeschwindigkeit, Temperatur, Luftfeuchtigkeit, Bodenfeuchte, Hangneigung, Topografie, Jahreszeiten, menschlichen Eingriffen und der genauen Vegetationsstruktur beeinflusst. Diese Faktoren werden im Modell nicht berücksichtigt. Auch die Darstellung der Baumarten ist stark vereinfacht, da es nur zwei Baumtypen gibt, die sich ausschließlich durch ihre Entzündungswahrscheinlichkeit unterscheiden.
 
-Eine weitere Einschränkung betrifft die zeitliche Darstellung des Feuers. Eine brennende Zelle bleibt im Modell nur für einen Zeitschritt im Zustand FIRE und wird danach sofort zu leerem Boden. Dadurch werden Brenndauer, Brandintensität und Nachglimmen stark vereinfacht. Auch die regelmäßige Rasterstruktur und die geschlossenen Grenzen stellen eine Vereinfachung gegenüber realen Landschaften dar. Das Modell eignet sich daher vor allem, um qualitative Zusammenhänge zwischen Baumwachstum, Waldzusammensetzung und räumlicher Feuerausbreitung zu analysieren.
+Eine weitere Einschränkung betrifft die zeitliche Darstellung des Feuers. Eine brennende Zelle bleibt im Modell nur für einen Zeitschritt im Zustand FIRE und wird danach sofort zu leerem Boden. Dadurch werden Brenndauer, Brandintensität und Nachglimmen stark vereinfacht. Auch die Feuercluster beschreiben daher nur die Zellen, die in einem bestimmten Tick gleichzeitig brennen. Sie können als Momentaufnahme eines sich ausbreitenden Feuerrings verstanden werden, bilden aber nicht die gesamte abgebrannte Fläche oder die vollständige Entwicklung eines Brandereignisses ab. Auch die regelmäßige Rasterstruktur und die geschlossenen Grenzen stellen eine Vereinfachung gegenüber realen Landschaften dar. Das Modell eignet sich daher vor allem, um qualitative Zusammenhänge zwischen Baumwachstum, Waldzusammensetzung und räumlicher Feuerausbreitung zu analysieren.
 
 ##  5. References
 
@@ -155,3 +156,76 @@ https://biodiv-im-wald.online/waldbrand-neue-gefahr-fur-die-heimischen-waldokosy
 https://itp.uni-frankfurt.de/~gros/StudentProjects/Projects_2020/projekt_lars_dingeldein/
 
 ## Appendix A: ODD
+
+# 1 Purpose and Patterns
+Wir wollen einen Waldbrand modellieren, um herauszufinden wie sich ein Feuer ausbreitet.
+
+Wir erwarten, dass es zu vielen kleinen Bränden kommt, aber nur selten zu einem großflächigen Brand.
+
+Wie verändert sich die durchschnittliche Brandgröße, Clustergröße und Clusteranzahl bei unterschiedlichen Wahrscheinlichkeiten für Baumwachstum für einen Nadelwald und einen Mischwald?
+
+
+# 2 Entities, State variables und Scales
+Gitter mit Zellen
+
+4 Zustände:
+- EMPTY  (0) — leerer Boden
+-TREE_A (1) — lebender Baum, Typ A (leicht entzündlich; p_spread_a = 1)
+-FIRE   (2) — brennender Baum
+-TREE_B (3) — lebender Baum, Typ B (feuerbeständiger; p_spread_b = 0,6)
+ 
+100x100 Gitter mit abgeschlossenen Grenzen
+
+Simulationsdauer: 1000 Ticks
+
+
+# 3 Process Overview and Scheduling
+Zellen ändern ihren Zustand
+- Baum wächst mit Wahrscheinlichkeit p_growth
+- Feuer entsteht mit Wahrscheinlichkeit p_lightning (=0,0001), nur wenn es einen Baum gibt
+- wenn ein Nachbar (Moore-Nachbarschaft) brennt und es gibt einen Baum, dann brennt dieser Baum im nächsten Zeitschritt mit Wahrscheinlichkeit p_spread_a bzw. p_spread_b
+- wenn Baum brennt ist die Zelle im nächsten Schritt leer
+
+Zellen aktualisieren Zustand in jedem Zeitschritt synchron
+
+
+# 4 Design Concepts
+Basic Principles:
+Self-Organised Criticality (Komplexität entsteht ohne zentrale Steuerung)
+Emergence:
+wenige Regeln für die Zellen -> entstehen viele kleine und wenig große Waldbrände
+x Adaption, Objectives, Learning, Prediction:
+Zellen treffen keine eigenen Entscheidungen, befolgen nur die Regeln
+Sensing:
+Zellen nehmen Zustand ihrer unmittelbaren Nachbarn wahr
+Interaction:
+direkte Beeinflussung der Nachbarn
+Stochasticity:
+Zufallsrate für Baumwachstum und Blitzeinschlag
+x Collectives:
+es gibt keine Gruppen von Agenten
+Observation:
+visuelle Darstellung der Zellen für jeden Zeitschritt
+statistische Auswertung: durchschnittliche Brandgröße, Clustergröße, Clusteranzahl und Korrelation
+
+
+# 5 Initialization 
+10.000 Zellen
+Baum mit Wahrscheinlichkeit p_tree_a und p_tree_b
+
+
+# 6 Input Data
+keine
+
+# 7 Submodels
+EMPTY → TREE_A oder TREE_B:
+wenn die Zelle leer ist (grid == EMPTY), wächst mit einer Wahrscheinlichkeit von p_growth ein Baum von Typ A oder B
+
+TREE_A -> FIRE: 
+wenn es in der Zelle einen Baum (Typ A) gibt (grid == TREE_A) und einen brennenden Nachbarn hat ((burning_nb) > 0) & (rnd < p_spread_a) oder (rnd < p_lightning) => FIRE
+
+TREE_B -> FIRE: 
+wenn es in der Zelle einen Baum (Typ B) gibt (grid == TREE_B) und einen brennenden Nachbarn hat (burning_nb) > 0 & (rnd < p_spread_b) oder (rnd < p_lightning) => FIRE
+
+FIRE -> EMPTY: 
+wenn ein Baum brennt (grid == FIRE) => EMPTY
